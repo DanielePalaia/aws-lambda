@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	"database/sql"
 
@@ -15,12 +20,14 @@ import (
 
 func handleRequest(ctx context.Context, e events.DynamoDBEvent) {
 
-	host := "database-1.ctm1ks5phyah.us-east-2.rds.amazonaws.com"
-	port := 5432
-	user := "postgres"
-	passwd := "postgres"
-	dbName := "test"
-	tableName := "JsonData"
+	prop, _ := ReadPropertiesFile("./properties.ini")
+	host := prop["host"]
+	user := prop["user"]
+	passwd := prop["passwd"]
+	dbName := prop["dbName"]
+	tableName := prop["tableName"]
+	port, _ := strconv.Atoi(prop["port"])
+
 	var db *sql.DB
 	var err error
 
@@ -51,4 +58,41 @@ func handleRequest(ctx context.Context, e events.DynamoDBEvent) {
 
 func main() {
 	lambda.Start(handleRequest)
+}
+
+type AppConfigProperties map[string]string
+
+func ReadPropertiesFile(filename string) (AppConfigProperties, error) {
+	config := AppConfigProperties{}
+
+	if len(filename) == 0 {
+		return config, nil
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if equal := strings.Index(line, "="); equal >= 0 {
+			if key := strings.TrimSpace(line[:equal]); len(key) > 0 {
+				value := ""
+				if len(line) > equal {
+					value = strings.TrimSpace(line[equal+1:])
+				}
+				config[key] = value
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return config, nil
 }
