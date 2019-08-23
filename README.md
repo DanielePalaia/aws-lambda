@@ -9,7 +9,7 @@ CREATE DATABASE test
 CREATE table jsonData(data json);
 ```
 
-### in main.go of this lambda write the database location info:
+### in properties.ini file specify:
 ```
 host := "database-1.ctm1ks5phyah.us-east-2.rds.amazonaws.com"
 port := 5432
@@ -25,7 +25,8 @@ then package it with bild-lambda-zip: </br>
 GOPATH/bin/build-lambda-zip aws-lambda
 
 ### Create a lambda function
-in aws console create a lambda function and load the .zip just created
+in aws console create a lambda function and load the .zip just created </br>
+../../bin/build-lambda-zip aws-lambda properties.ini </br>
 
 ### Create a dynamodb table
 Create a simple dynamodb table and activate streams
